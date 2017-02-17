@@ -4,7 +4,6 @@
 #include"findAndDrawOutline.h"
 findAndDrawOutline::findAndDrawOutline()
 {
-	area = 0.0;
 }
 //查询轮廓并绘制轮廓
 Mat findAndDrawOutline::drawOutline(Mat image)
@@ -33,4 +32,10 @@ Mat findAndDrawOutline::drawOutlineOfOri(Mat outline,Mat src)
 		}
 	}
 	return src;
+}
+//计算轮廓的面积
+double findAndDrawOutline::computeArea(vector<Point> outline)
+{
+	double area = contourArea(outline);
+	return area;
 }

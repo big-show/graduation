@@ -126,5 +126,33 @@ void main()
 	src_outline_mat = src_outline.drawOutlineOfOri(openedAfterfillhole, src_outline_mat);
 	namedWindow("oriWithOutline");
 	imshow("oriWithOutline", src_outline_mat);
+	
+	/***************************************计算并输出轮廓面积******************************/
+	//对轮廓进行标识
+	CvFont font;
+	double hScale = 1;
+	double vScale = 1;
+	int lineWidth = 2;// 相当于写字的线条    
+	
+	
+	// 初始化字体   
+	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX | CV_FONT_ITALIC, hScale, vScale, 0, lineWidth);//初始化字体，准备写到图片上的   
+	// cvPoint 为起笔的x，y坐标   
+	
+	vector<vector<Point>> contours;
+	//轮廓数据存储在contours里
+	findContours(openedAfterfillhole, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+	Mat img_outline_logo = img_outline.clone();
+	for (int i = 0; i < contours.size(); i++)
+	{
+		stringstream sstr;
+		sstr << i;
+		string str = sstr.str();
+		putText(img_outline_logo, str, (contours[i][1]), FONT_HERSHEY_SIMPLEX, 0.3, Scalar(0, 254, 0), 1, 1);//在图片中输出字符  
+		double area=outline.computeArea(contours[i]);
+		cout << "第" << i << "个建筑物的面积为" << area << endl;
+	}
+	namedWindow("imgWihtLogo");
+	imshow("imgWihtLogo", img_outline_logo);
 	cvWaitKey(0);
 } 
