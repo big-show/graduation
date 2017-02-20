@@ -43,12 +43,12 @@ void main()
 {
 	/*******************************对图像使用meanshift进行分割**********************************/
 
-	src = cvLoadImage("C:\\Users\\Administrator\\Desktop\\RespicS\\building_2\\building_2.jpg");   //load the picture
+	src = cvLoadImage("C:\\Users\\Administrator\\Desktop\\RespicS\\building_3\\building_3.jpg");   //load the picture
 	CvSize size;
 	size.width = src->width;
 	size.height = src->height;
 	dst = cvCreateImage(size, src->depth, 3);  //set the size of the dst image
-	cvNamedWindow("src", CV_WINDOW_AUTOSIZE);
+	//cvNamedWindow("src", CV_WINDOW_AUTOSIZE);
 	cvNamedWindow("dst", CV_WINDOW_AUTOSIZE);
 	cvShowImage("src", src);
 	cvPyrMeanShiftFiltering(src, dst, spatialRad, colorRad, maxPryLevel);
@@ -76,19 +76,19 @@ void main()
 
 
 	//创建窗口（用于显示图像）
-	cvNamedWindow("img_color", CV_WINDOW_AUTOSIZE);
+	//cvNamedWindow("img_color", CV_WINDOW_AUTOSIZE);
 	//cvNamedWindow("img_gray", CV_WINDOW_AUTOSIZE);
-	cvNamedWindow("img_binary", CV_WINDOW_AUTOSIZE);
+	//cvNamedWindow("img_binary", CV_WINDOW_AUTOSIZE);
 
-	cvShowImage("img_color", dst);//显示彩色图像和对应的灰度图像、二值图像
+	//cvShowImage("img_color", dst);//显示彩色图像和对应的灰度图像、二值图像
 	//cvShowImage("img_gray", img_gray);
-	cvShowImage("img_binary", img_binary); 
+	//cvShowImage("img_binary", img_binary); 
 	//将IplImage转换为Mat
 	Mat img_binary_mat(img_binary, true);
 	Mat element5(5, 5, CV_8U, Scalar(1));
 	//morphologyEx(img_binary_mat, opened, MORPH_OPEN, element5);
-	//namedWindow("Opened Image");
-	//imshow("Opened Image", opened);
+	namedWindow("Binary Image");
+	imshow("Binary Image", img_binary_mat);
 	///*************************************对图像进行轮廓填充**************************/
 	////http://blog.csdn.net/augusdi/article/details/9011935
 	Mat img_fillhold = img_binary_mat.clone();
@@ -127,32 +127,58 @@ void main()
 	namedWindow("oriWithOutline");
 	imshow("oriWithOutline", src_outline_mat);
 	
-	/***************************************计算并输出轮廓面积******************************/
+	/***************************************计算并输出轮廓面积并标识******************************/
 	//对轮廓进行标识
-	CvFont font;
-	double hScale = 1;
-	double vScale = 1;
-	int lineWidth = 2;// 相当于写字的线条    
-	
-	
-	// 初始化字体   
-	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX | CV_FONT_ITALIC, hScale, vScale, 0, lineWidth);//初始化字体，准备写到图片上的   
-	// cvPoint 为起笔的x，y坐标   
-	
+	//CvFont font;
+	//double hScale = 1;
+	//double vScale = 1;
+	//int lineWidth = 2;// 相当于写字的线条    
+	//
+	//
+	//// 初始化字体   
+	//cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX | CV_FONT_ITALIC, hScale, vScale, 0, lineWidth);//初始化字体，准备写到图片上的   
+	//// cvPoint 为起笔的x，y坐标   
+	//
 	vector<vector<Point>> contours;
-	//轮廓数据存储在contours里
+	////轮廓数据存储在contours里
 	findContours(openedAfterfillhole, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
 	Mat img_outline_logo = img_outline.clone();
-	for (int i = 0; i < contours.size(); i++)
-	{
-		stringstream sstr;
-		sstr << i;
-		string str = sstr.str();
-		putText(img_outline_logo, str, (contours[i][1]), FONT_HERSHEY_SIMPLEX, 0.3, Scalar(0, 254, 0), 1, 1);//在图片中输出字符  
-		double area=outline.computeArea(contours[i]);
-		cout << "第" << i << "个建筑物的面积为" << area << endl;
-	}
+	//for (int i = 0; i < contours.size(); i++)
+	//{
+	//	stringstream sstr;
+	//	sstr << i;
+	//	string str = sstr.str();
+	//	putText(img_outline_logo, str, (contours[i][1]), FONT_HERSHEY_SIMPLEX, 0.3, Scalar(0, 254, 0), 1, 1);//在图片中输出字符  
+	//	double area=outline.computeArea(contours[i]);
+	//	cout << "第" << i << "个建筑物的面积为" << area << endl;
+	//}
+	img_outline_logo = src_outline.drawLogo(openedAfterfillhole, img_outline,false,0,0);
 	namedWindow("imgWihtLogo");
 	imshow("imgWihtLogo", img_outline_logo);
+
+	/**************************************运用面积以及长宽比例排除部分轮廓后的二值轮廓图像**************************/
+	findAndDrawOutline imgOutlineAfterJudement;
+	Mat img_outline_after_judement(img_binary_mat.size(), CV_8UC3, Scalar(0));
+	img_outline_after_judement = imgOutlineAfterJudement.drawOutlineAfterJudement(openedAfterfillhole, contours, 10, 4);
+	namedWindow("binary_img Outline After Judgement");
+	imshow("binary_img Outline After Judgement", img_outline_after_judement);
+	
+	/**************************************运用面积以及长宽比例排除部分轮廓后的原图轮廓图像**************************/
+	
+	Mat src_outline_mat_1(src, true);
+	findAndDrawOutline imgOutlineAfterJudementOfOri;
+	Mat img_outline_after_judement_of_ori(img_binary_mat.size(), CV_8UC3, Scalar(0));
+	img_outline_after_judement_of_ori = imgOutlineAfterJudementOfOri.drawOutlineAfterJudementOfOri(src_outline_mat_1, contours, 10, 4);
+	//namedWindow("Ori Outline After Judgement ");
+	imshow("Ori Outline After Judgement", img_outline_after_judement_of_ori);
+
+	/***************************************运用面积及长款比例排除部分轮廓后计算并输出轮廓面积并标识******************************/
+	
+	Mat img_outline_logo_after_judement = img_outline_after_judement.clone();
+	img_outline_logo_after_judement = src_outline.drawLogo(openedAfterfillhole, img_outline_after_judement, true, 10, 4);
+	namedWindow("img With Logo After Judement");
+	imshow("img With Logo After Judement", img_outline_logo_after_judement);
 	cvWaitKey(0);
+
+
 } 
