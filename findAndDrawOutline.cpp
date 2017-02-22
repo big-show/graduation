@@ -26,9 +26,10 @@ Mat findAndDrawOutline::drawOutlineOfOri(Mat outline,Mat src)
 	{
 		for (int j = 0; j < contours[i].size(); j++)
 		{
-			src.at<Vec3b>(contours[i][j])[0] = 191;
-			src.at<Vec3b>(contours[i][j])[1] = 19;
-			src.at<Vec3b>(contours[i][j])[2] = 206;
+			src.at<Vec3b>(contours[i][j])[0] = 0;
+			src.at<Vec3b>(contours[i][j])[1] = 254;
+			src.at<Vec3b>(contours[i][j])[2] = 0;
+		
 		}
 	}
 	return src;
@@ -91,9 +92,10 @@ Mat findAndDrawOutline::drawOutlineAfterJudementOfOri(Mat image, vector<vector<P
 		{
 			for (int j = 0; j < contours[i].size(); j++)
 			{
-				image.at<Vec3b>(contours[i][j])[0] = 191;
-				image.at<Vec3b>(contours[i][j])[1] = 19;
-				image.at<Vec3b>(contours[i][j])[2] = 206;
+				image.at<Vec3b>(contours[i][j])[0] = 0;
+				image.at<Vec3b>(contours[i][j])[1] = 254;
+				image.at<Vec3b>(contours[i][j])[2] = 0;
+				
 			}
 		}
 		else
