@@ -164,7 +164,7 @@ void outline::opreationAboutOutline(IplImage *src,bool shadow_flag)
 	namedWindow("oriWithOutline");
 	imshow("oriWithOutline", src_outline_mat);
 
-	/***************************************计算并输出轮廓面积并标识******************************/
+	/***************************************计算并输出轮廓面积及周长并标识******************************/
 	//对轮廓进行标识
 	//CvFont font;
 	//double hScale = 1;

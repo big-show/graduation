@@ -26,9 +26,9 @@ Mat findAndDrawOutline::drawOutlineOfOri(Mat outline,Mat src)
 	{
 		for (int j = 0; j < contours[i].size(); j++)
 		{
-			src.at<Vec3b>(contours[i][j])[0] = 0;
-			src.at<Vec3b>(contours[i][j])[1] = 254;
-			src.at<Vec3b>(contours[i][j])[2] = 0;
+			src.at<Vec3b>(contours[i][j])[0] = 191;
+			src.at<Vec3b>(contours[i][j])[1] = 19;
+			src.at<Vec3b>(contours[i][j])[2] = 206;
 		
 		}
 	}
@@ -39,6 +39,49 @@ double findAndDrawOutline::computeArea(vector<Point> outline)
 {
 	double area = contourArea(outline);
 	return area;
+}
+//计算轮廓的周长
+double findAndDrawOutline::computeLength(vector<Point> outline)
+{
+	double len = arcLength(outline, 1);
+	return len;
+}
+//计算轮廓的近似长宽比
+double* findAndDrawOutline::computeLenghtWidthRatio(double area, double perimete)
+{
+	double len = 0, width = 0, ratio = 0;
+	int tempArea = (int)area;
+	int tempPerimeter = (int)perimete;
+	double *result = new double[3];
+	double  minPerimeter = 0.98*tempPerimeter;
+	double maxPerimeter = 1.02*tempPerimeter;
+	double minArea = 0.98*tempArea;
+	double maxArea = 1.02*tempArea;
+	double temp_Perimeter = 2 * (len + width);
+	double temp_Area = len*width;
+	for (len; len < tempPerimeter / 2;)
+	{
+		if (temp_Perimeter >= minPerimeter&&temp_Perimeter <= maxPerimeter&&temp_Area >= minArea&&temp_Area <= maxArea)
+		{
+			break;
+			
+		}
+		else
+		{
+			len = len + 0.1;
+			width = perimete / 2 - len;
+			temp_Perimeter = 2 * (len + width);
+			temp_Area = len*width;
+		}
+	}
+	if (len > width)
+		ratio = len / width;
+	else
+		ratio = width / len;
+	result[0] = len;
+	result[1] = width;
+	result[2] = ratio;
+	return result;
 }
 //进行面积或长宽比例判断后将轮廓排除后的结果
 //image 是二值图像，outline是存储轮廓。
@@ -58,7 +101,9 @@ Mat findAndDrawOutline::drawOutlineAfterJudement(Mat image, vector<vector<Point>
 	for (int i = 0; i < contours.size(); i++)
 	{
 		double temparea = contourArea(contours[i]);
-		if (temparea >= mean/4&&temparea<=maxratio*mean)
+		double tempPerimeter = computeLength(contours[i]);
+		double tempLenWidthRatio = computeLenghtWidthRatio(temparea, tempPerimeter)[2];
+		if (temparea >= mean/4&&tempLenWidthRatio<25)
 		{
 			for (int j = 0; j < contours[i].size(); j++)
 			{
@@ -85,16 +130,19 @@ Mat findAndDrawOutline::drawOutlineAfterJudementOfOri(Mat image, vector<vector<P
 	std::cout << "平均面积" << mean << std::endl;
 	//Mat img_after_judement(image.size(), CV_8UC3, Scalar(0));
 	//findContours(image, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+
 	for (int i = 0; i < contours.size(); i++)
 	{
 		double temparea = contourArea(contours[i]);
-		if (temparea >= mean / minratio  && temparea <= maxratio*mean)
+		double tempPerimeter = computeLength(contours[i]);
+		double tempLenWidthRatio = computeLenghtWidthRatio(temparea, tempPerimeter)[2];
+		if (temparea >= mean / minratio  && tempLenWidthRatio<25)
 		{
 			for (int j = 0; j < contours[i].size(); j++)
 			{
-				image.at<Vec3b>(contours[i][j])[0] = 0;
-				image.at<Vec3b>(contours[i][j])[1] = 254;
-				image.at<Vec3b>(contours[i][j])[2] = 0;
+				image.at<Vec3b>(contours[i][j])[0] = 191;
+				image.at<Vec3b>(contours[i][j])[1] = 19;
+				image.at<Vec3b>(contours[i][j])[2] = 206;
 				
 			}
 		}
@@ -103,7 +151,7 @@ Mat findAndDrawOutline::drawOutlineAfterJudementOfOri(Mat image, vector<vector<P
 	}
 	return image;
 }
-//在二值图像上标出数字记号loge
+//在二值图像上标出数字记号loge,flag决定是否进行通过面积以及长宽比进行处理。
 Mat findAndDrawOutline::drawLogo(Mat image, Mat outline_img, bool flag ,int maxratio, int minratio)
 {
 	CvFont font;
@@ -129,7 +177,12 @@ Mat findAndDrawOutline::drawLogo(Mat image, Mat outline_img, bool flag ,int maxr
 			string str = sstr.str();
 			putText(img_outline_logo, str, (contours[i][1]), FONT_HERSHEY_SIMPLEX, 0.3, Scalar(0, 254, 0), 1, 1);//在图片中输出字符  
 			double area = computeArea(contours[i]);
-			std::cout << "第" << i << "个建筑物的面积为" << area << std::endl;
+			double preimeter = computeLength(contours[i]);
+			double *result = new double[3];
+			result = computeLenghtWidthRatio(area, preimeter);
+
+			std::cout << "第" << i << "个建筑物的面积，周长，长，宽，长宽比分别为    " << area <<"       "<<preimeter<<"   "<<result[0]<<"    "<<result[1]<<"    "<<result[2]<<  std::endl;
+			
 		}
 	}
 	else
@@ -147,15 +200,21 @@ Mat findAndDrawOutline::drawLogo(Mat image, Mat outline_img, bool flag ,int maxr
 		for (int i = 0; i < contours.size();i++)
 		{
 			double temparea = contourArea(contours[i]);
-			if (temparea >= mean / minratio  && temparea <= maxratio*mean)
+			double tempPerimeter = computeLength(contours[i]);
+			double tempLenWidthRatio = computeLenghtWidthRatio(temparea, tempPerimeter)[2];
+			if (temparea >= mean / minratio  && tempLenWidthRatio<=25)
 			{
 				std::stringstream sstr;
 				sstr << index;
 				string str = sstr.str();
 				putText(img_outline_logo, str, (contours[i][1]), FONT_HERSHEY_SIMPLEX, 0.3, Scalar(0, 254, 0), 1, 1);//在图片中输出字符  
-				index++;
 				double area = computeArea(contours[i]);
-				std::cout <<"通过面积及长度处理后："<< "第" << index << "个建筑物的面积为" << area << std::endl;
+				double preimeter = computeLength(contours[i]);
+				double *result = new double[3];
+				result = computeLenghtWidthRatio(area, preimeter);
+				std::cout << "第" << index << "个建筑物的面积，周长，长，宽，长宽比分别为" << area << "   " << preimeter << "   " << result[0] << "    " << result[1] << "    " << result[2] << std::endl;
+				index++;
+
 			}
 		}
 	}

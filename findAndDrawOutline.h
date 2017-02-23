@@ -11,6 +11,8 @@ public:
 	Mat drawOutline( Mat image);
 	Mat drawOutlineOfOri(Mat outline,Mat src);
 	double computeArea(vector<Point> outline);
+	double computeLength(vector<Point>outline);
+	double* computeLenghtWidthRatio(double area, double perimete);
 	Mat drawOutlineAfterJudement(Mat image, vector<vector<Point>> contours, int maxratio, int minratio);
 	Mat drawOutlineAfterJudementOfOri(Mat image, vector<vector<Point>> contours, int maxratio, int minratio);
 	Mat drawLogo(Mat image, Mat outline_logo, bool flag, int maxratio, int minratio);
