@@ -18,5 +18,6 @@ public:
 	Mat drawLogo(Mat image, Mat outline_logo, bool flag, int maxratio, int minratio);
 	vector<Point> getGrowPoint(Mat image,int maxratio, int minratio);
 	Mat drawShadowOfGrowPoint(Mat src, vector<Point> pt, int threshold);
+	void connerHarris(int th,Mat src);
 };
 #endif

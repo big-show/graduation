@@ -284,4 +284,7 @@ void outline::opreationAboutOutline(IplImage *src,bool shadow_flag)
 
 
 	}
+	/*****************************************阴影进行角点检测****************************************/
+	Mat shadow_src = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\building_9\\harri_test2.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src);
 }

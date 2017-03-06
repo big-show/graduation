@@ -309,3 +309,84 @@ Mat findAndDrawOutline::drawShadowOfGrowPoint(Mat src,vector< Point> pt, int th)
 	}
 	return matDst.clone();
 }
+//通过角点检测法计算阴影的高度。
+void findAndDrawOutline::connerHarris(int th,Mat src)
+{
+	int maxCorners =30;
+	vector<Point2f> corners;
+	double qualityLevel = 0.01;
+	double minDistance = 10;
+	int blockSize = 3;
+	bool useHarrisDetector = false;
+	double k = 0.04;
+	Mat src_gray;
+	Mat copy = src.clone();
+	cvtColor(src, src_gray, CV_BGR2GRAY);
+	/// Copy the source image  
+	Mat cormat;
+	/// Apply corner detection :Determines strong corners on an image.  
+	goodFeaturesToTrack(src_gray,
+		corners,
+		maxCorners,
+		qualityLevel,
+		minDistance,
+		Mat(),
+		blockSize,
+		useHarrisDetector,
+		k);
+	std::cout << corners << std::endl;
+	/// Draw corners detected  
+	for (int i = 0; i < corners.size(); i++){
+		circle(copy, corners[i], 2, Scalar(255), 2, 8, 0);
+		circle(src, corners[i], 4, Scalar(0, 255, 0), 2, 8, 0);
+	}
+	//计算平均y值坐标
+	int midHeight = 0;
+	int sumHeight = 0;
+	for (int i = 0; i < corners.size(); i++)
+	{
+		sumHeight += corners[i].y;
+	}
+	midHeight = sumHeight / corners.size();
+	std::cout << midHeight << std::endl;
+	//存储轮廓上边界以及下边界的点元素.
+	vector<Point2f> topArr;
+	vector<Point2f> bottomArr;
+	for (int j = 0; j < corners.size(); j++)
+	{
+		if (corners[j].y < midHeight)
+			bottomArr.push_back(corners[j]);
+		else
+			topArr.push_back(corners[j]);
+	}
+	std::cout << "上边界元素" << topArr << std::endl;
+	std::cout << "下边界元素" << bottomArr << std::endl;
+	//遍历上面元素,找到下边元素横坐标误差小于5个像素的点进行连接
+	int index = 0;
+	double sumLine = 0;
+	double meanLine = 0;
+	for (int i = 0; i < topArr.size(); i++)
+	{
+		for (int j = 0; j < bottomArr.size(); j++)
+		{
+			if (abs(topArr[i].x - bottomArr[j].x) <= 5)
+			{
+				index++;
+				line(copy, topArr[i], bottomArr[j], cv::Scalar(0, 255, 255));
+				int tempX = topArr[i].x - bottomArr[j].x;
+				int tempY = topArr[i].y - bottomArr[j].y;
+				sumLine += sqrt(tempX*tempX + tempY*tempY);
+				std::cout << "第" << index << "组角点中第一个点" << "横坐标 x=    " << topArr[i].x << "  纵坐标 y=  " << topArr[i].y << std::endl;
+				std::cout << "第" << index << "组角点中第二个点" << "横坐标 x=    " << bottomArr[j].x << "  纵坐标 y=  " << bottomArr[j].y << std::endl;
+				std::cout << "第" << index << "组角点之间的连线长度为" << sqrt(tempX*tempX + tempY*tempY) << std::endl;
+			}
+
+		}
+	}
+		meanLine = sumLine / index;
+		std::cout << "通过角点法计算该阴影的平均长度为   " << meanLine << std::endl;
+	
+	/// 展示图像 
+	imshow("corners_window", copy);
+	imshow("source_window", src);
+}

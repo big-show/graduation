@@ -32,7 +32,7 @@ void main()
 	int spatialRad = 14, colorRad = 29, maxPryLevel = 3;
 	/*******************************对图像使用meanshift进行分割,查找轮廓的操作**********************************/
 	outline outline;
-	src = cvLoadImage("C:\\Users\\Administrator\\Desktop\\RespicS\\building_2\\building_2.jpg");   //load the picture
+	src = cvLoadImage("C:\\Users\\Administrator\\Desktop\\RespicS\\building_6\\building_6.jpg");   //load the picture
 	bool building = false;
 	//outline.opreationAboutOutline(src,building);
 	//cvWaitKey(0);
