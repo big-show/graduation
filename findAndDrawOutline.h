@@ -19,5 +19,6 @@ public:
 	vector<Point> getGrowPoint(Mat image,int maxratio, int minratio);
 	Mat drawShadowOfGrowPoint(Mat src, vector<Point> pt, int threshold);
 	void connerHarris(int th,Mat src);
+	void connerHarris_f(int th, Mat src);
 };
 #endif

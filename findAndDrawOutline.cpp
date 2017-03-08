@@ -218,9 +218,9 @@ Mat findAndDrawOutline::drawLogo(Mat image, Mat outline_img, bool flag ,int maxr
 				double *result = new double[3];
 				result = computeLenghtWidthRatio(area, preimeter);
 				if (result[0]>result[1])
-					std::cout << "第" << index << "个轮廓的面积，周长，长，宽，长宽比分别为    " << area << "       " << preimeter << "   " << result[0] << "    " << result[1] << "    " << result[2] << std::endl;
+					std::cout << "第" << index << "个轮廓的面积为    " << area + preimeter << "       " << preimeter << "   " << result[0] << "    " << result[1] << "    " << result[2] << std::endl;
 				else
-					std::cout << "第" << index << "个轮廓的面积，周长，长，宽，长宽比分别为    " << area << "       " << preimeter << "   " << result[1] << "    " << result[0] << "    " << result[2] << std::endl;
+					std::cout << "第" << index << "个轮廓的面积为    " << area + preimeter << "       " << preimeter << "   " << result[1] << "    " << result[0] << "    " << result[2] << std::endl;
 				index++;
 
 			}
@@ -309,7 +309,7 @@ Mat findAndDrawOutline::drawShadowOfGrowPoint(Mat src,vector< Point> pt, int th)
 	}
 	return matDst.clone();
 }
-//通过角点检测法计算阴影的高度。
+//改进的通过角点检测法计算阴影的高度。
 void findAndDrawOutline::connerHarris(int th,Mat src)
 {
 	int maxCorners =30;
@@ -337,7 +337,7 @@ void findAndDrawOutline::connerHarris(int th,Mat src)
 	std::cout << corners << std::endl;
 	/// Draw corners detected  
 	for (int i = 0; i < corners.size(); i++){
-		circle(copy, corners[i], 2, Scalar(255), 2, 8, 0);
+		circle(copy, corners[i], 2, Scalar(65,254,254), 2, 8, 0);
 		circle(src, corners[i], 4, Scalar(0, 255, 0), 2, 8, 0);
 	}
 	//计算平均y值坐标
@@ -355,12 +355,12 @@ void findAndDrawOutline::connerHarris(int th,Mat src)
 	for (int j = 0; j < corners.size(); j++)
 	{
 		if (corners[j].y < midHeight)
-			bottomArr.push_back(corners[j]);
-		else
 			topArr.push_back(corners[j]);
+		else
+			bottomArr.push_back(corners[j]);
 	}
-	std::cout << "上边界元素" << topArr << std::endl;
-	std::cout << "下边界元素" << bottomArr << std::endl;
+	/*std::cout << "上边界元素" << topArr << std::endl;
+	std::cout << "下边界元素" << bottomArr << std::endl;*/
 	//遍历上面元素,找到下边元素横坐标误差小于5个像素的点进行连接
 	int index = 0;
 	double sumLine = 0;
@@ -369,24 +369,119 @@ void findAndDrawOutline::connerHarris(int th,Mat src)
 	{
 		for (int j = 0; j < bottomArr.size(); j++)
 		{
-			if (abs(topArr[i].x - bottomArr[j].x) <= 5)
+			if (abs(topArr[i].x - bottomArr[j].x) <= 3)
 			{
 				index++;
-				line(copy, topArr[i], bottomArr[j], cv::Scalar(0, 255, 255));
+				line(copy, topArr[i], bottomArr[j], cv::Scalar(0, 0, 255));
 				int tempX = topArr[i].x - bottomArr[j].x;
 				int tempY = topArr[i].y - bottomArr[j].y;
 				sumLine += sqrt(tempX*tempX + tempY*tempY);
 				std::cout << "第" << index << "组角点中第一个点" << "横坐标 x=    " << topArr[i].x << "  纵坐标 y=  " << topArr[i].y << std::endl;
 				std::cout << "第" << index << "组角点中第二个点" << "横坐标 x=    " << bottomArr[j].x << "  纵坐标 y=  " << bottomArr[j].y << std::endl;
 				std::cout << "第" << index << "组角点之间的连线长度为" << sqrt(tempX*tempX + tempY*tempY) << std::endl;
+				//删除匹配过的底部角点；
+				bottomArr[j].x = 10000;
+				break;
 			}
 
 		}
 	}
 		meanLine = sumLine / index;
 		std::cout << "通过角点法计算该阴影的平均长度为   " << meanLine << std::endl;
+		std::cout << "实际阴影长度" << meanLine*0.61 <<std:: endl;
+		std::cout << "建筑物估算高度为" << meanLine*0.61*1.2975 << std::endl;
+		std::cout << "实际高度与误差为" << std::abs(22.56 - meanLine*0.61*1.2975) << std::endl;
+		std::cout << "估算的准确率为" << (double)(1 - std::abs(22.56 - meanLine*0.61*1.2975) / 22.56) <<std::endl;
 	
 	/// 展示图像 
 	imshow("corners_window", copy);
 	imshow("source_window", src);
+}
+//未改进的通过角点检测法计算阴影的高度。
+void findAndDrawOutline::connerHarris_f(int th, Mat src)
+{
+	int maxCorners = 30;
+	vector<Point2f> corners;
+	double qualityLevel = 0.01;
+	double minDistance = 10;
+	int blockSize = 3;
+	bool useHarrisDetector = false;
+	double k = 0.04;
+	Mat src_gray;
+	Mat copy = src.clone();
+	cvtColor(src, src_gray, CV_BGR2GRAY);
+	/// Copy the source image  
+	Mat cormat;
+	/// Apply corner detection :Determines strong corners on an image.  
+	goodFeaturesToTrack(src_gray,
+		corners,
+		maxCorners,
+		qualityLevel,
+		minDistance,
+		Mat(),
+		blockSize,
+		useHarrisDetector,
+		k);
+	std::cout << corners << std::endl;
+	/// Draw corners detected  
+	for (int i = 0; i < corners.size(); i++){
+		circle(copy, corners[i], 2, Scalar(65, 254, 254), 2, 8, 0);
+		circle(src, corners[i], 4, Scalar(0, 255, 0), 2, 8, 0);
+	}
+	//计算平均y值坐标
+	int midHeight = 0;
+	int sumHeight = 0;
+	for (int i = 0; i < corners.size(); i++)
+	{
+		sumHeight += corners[i].y;
+	}
+	midHeight = sumHeight / corners.size();
+	std::cout << midHeight << std::endl;
+	//存储轮廓上边界以及下边界的点元素.
+	vector<Point2f> topArr;
+	vector<Point2f> bottomArr;
+	for (int j = 0; j < corners.size(); j++)
+	{
+		if (corners[j].y < midHeight)
+			topArr.push_back(corners[j]);
+		else
+			bottomArr.push_back(corners[j]);
+	}
+	/*std::cout << "上边界元素" << topArr << std::endl;
+	std::cout << "下边界元素" << bottomArr << std::endl;*/
+	//遍历上面元素,找到下边元素横坐标误差小于5个像素的点进行连接
+	int index = 0;
+	double sumLine = 0;
+	double meanLine = 0;
+	for (int i = 0; i < topArr.size(); i++)
+	{
+		for (int j = 0; j < bottomArr.size(); j++)
+		{
+			if (abs(topArr[i].x - bottomArr[j].x) <= 3)
+			{
+				index++;
+				line(copy, topArr[i], bottomArr[j], cv::Scalar(0, 0, 255));
+				int tempX = topArr[i].x - bottomArr[j].x;
+				int tempY = topArr[i].y - bottomArr[j].y;
+				sumLine += sqrt(tempX*tempX + tempY*tempY);
+				std::cout << "第" << index << "组角点中第一个点" << "横坐标 x=    " << topArr[i].x << "  纵坐标 y=  " << topArr[i].y << std::endl;
+				std::cout << "第" << index << "组角点中第二个点" << "横坐标 x=    " << bottomArr[j].x << "  纵坐标 y=  " << bottomArr[j].y << std::endl;
+				std::cout << "第" << index << "组角点之间的连线长度为" << sqrt(tempX*tempX + tempY*tempY) << std::endl;
+				//删除匹配过的底部角点；
+				//bottomArr[j].x = 10000;
+				break;
+			}
+
+		}
+	}
+	meanLine = sumLine / index;
+	std::cout << "通过角点法计算该阴影的平均长度为   " << meanLine << std::endl;
+	std::cout << "实际阴影长度" << meanLine*0.61 << std::endl;
+	std::cout << "建筑物估算高度为" << meanLine*0.61*1.2975 << std::endl;
+	std::cout << "实际高度与误差为" << std::abs(22.56 - meanLine*0.61*1.2975) << std::endl;
+	std::cout << "估算的准确率为" << (double)(1 - std::abs(22.56 - meanLine*0.61*1.2975) / 22.56) << std::endl;
+
+	/// 展示图像 
+	imshow("corners_window_f", copy);
+	imshow("source_window_f", src);
 }

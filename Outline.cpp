@@ -23,13 +23,13 @@ void on_Meanshift(int)  //the callback function
 
 //运用漫水算法对图像的空洞进行填充。
 //http://bbs.csdn.net/topics/391542633?page=1
-void fillHole(const Mat srcBw, Mat &dstBw)
+void fillHole(const Mat srcBw, Mat &dstBw,Scalar color)
 {
 	Size m_Size = srcBw.size();
 	Mat Temp = Mat::zeros(m_Size.height + 2, m_Size.width + 2, srcBw.type());//延展图像
 	srcBw.copyTo(Temp(Range(1, m_Size.height + 1), Range(1, m_Size.width + 1)));
 
-	cv::floodFill(Temp, Point(0, 0), Scalar(255));
+	cv::floodFill(Temp, Point(0, 0),color);
 
 	Mat cutImg;//裁剪延展的图像
 	Temp(Range(1, m_Size.height + 1), Range(1, m_Size.width + 1)).copyTo(cutImg);
@@ -112,7 +112,7 @@ void outline::opreationAboutOutline(IplImage *src,bool shadow_flag)
 	///*************************************对图像进行轮廓填充**************************/
 	////http://blog.csdn.net/augusdi/article/details/9011935
 	Mat img_fillhold = img_binary_mat.clone();
-	fillHole(img_binary_mat, img_fillhold);
+	fillHole(img_binary_mat, img_fillhold,Scalar(255));
 	//fillHole(after_canny_image, img_fillhold);
 
 	namedWindow("Fillhole Image");
@@ -214,16 +214,39 @@ void outline::opreationAboutOutline(IplImage *src,bool shadow_flag)
 	imshow("binary_img Outline After Judgement", img_outline_after_judement);
 	if (shadow_flag==true)
 	imwrite("C:\\Users\\Administrator\\Desktop\\RespicS\\shadow\\oriMethodShadow.jpg", img_outline_after_judement);
-	/**************************************运用面积以及长宽比例排除部分轮廓后的二值图像**************************/
+	/**************************************运用面积以及长宽比例排除部分轮廓后的二值图像，并且对轮廓使用漫水算法进行填充**************************/
 
 	Mat binary_img_fillhold;
-	fillHole(img_outline_after_judement, binary_img_fillhold);
-	cvtColor(binary_img_fillhold, binary_img_fillhold, CV_BGR2GRAY);
-	threshold(binary_img_fillhold, binary_img_fillhold, 0, 255, CV_THRESH_OTSU);
+	fillHole(img_outline_after_judement, binary_img_fillhold,Scalar(0,0,255));
+	//cvtColor(binary_img_fillhold, binary_img_fillhold, CV_BGR2GRAY);
+	//threshold(binary_img_fillhold, binary_img_fillhold, 0, 255, CV_THRESH_OTSU);
 	//fillHole(after_canny_image, img_fillhold);
+	Mat fill_image_of_blue(binary_img_fillhold.size(), CV_8UC3);
+	Scalar cs;
+	for (int i = 0; i < binary_img_fillhold.rows; i++)
+	{
+		for (int j = 0; j < binary_img_fillhold.cols; j++)
+		{
+			
+			int color = binary_img_fillhold.at<Vec3b>(i,j)[2];
+			if (binary_img_fillhold.at<Vec3b>(i,j)[2] > 128)
+			{
+				binary_img_fillhold.at<Vec3b>(i,j) = Vec3b(255, 0, 0);
+				
 
+			}
+			else
+			{
+				binary_img_fillhold.at<Vec3b>(i,j) = Vec3b(0, 0, 0);
+
+			}
+		}
+	}
+	Mat result_im;
+	result_im = imgOutlineAfterJudement.drawOutlineAfterJudementOfOri(binary_img_fillhold, contours, 10, 4);
+	result_im = src_outline.drawLogo(openedAfterfillhole, result_im, true, 10, 4);
 	namedWindow("Fillhole Image After Judement of Binary");
-	imshow("Fillhole Image After Judement of Binary", binary_img_fillhold);
+	imshow("Fillhole Image After Judement of Binary", result_im);
 	/**************************************运用面积以及长宽比例排除部分轮廓后的原图轮廓图像**************************/
 
 	Mat src_outline_mat_1(src, true);
@@ -272,7 +295,7 @@ void outline::opreationAboutOutline(IplImage *src,bool shadow_flag)
 	{
 		Mat shadow_light_shade = img_outline_after_judement.clone();
 		//进行轮廓填充
-		fillHole(img_outline_after_judement, shadow_light_shade);
+		fillHole(img_outline_after_judement, shadow_light_shade,Scalar(255));
 		Mat shadow_gray(shadow_light_shade.size(),shadow_light_shade.type());
 		cvtColor(shadow_light_shade, shadow_gray, CV_BGR2GRAY);
 		Mat dst_shadow;
@@ -284,7 +307,67 @@ void outline::opreationAboutOutline(IplImage *src,bool shadow_flag)
 
 
 	}
-	/*****************************************阴影进行角点检测****************************************/
-	Mat shadow_src = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\building_9\\harri_test2.jpg");
-	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src);
+	/**************************未改进版本的角点距离方法*****************************************************/
+	Mat shadow_src_1_f = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_11.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris_f(50, shadow_src_1_f);
+	/*Mat shadow_src_2 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_2.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris_f(50, shadow_src_2);
+	Mat shadow_src_3 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_3.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris_f(50, shadow_src_3);
+	Mat shadow_src_4 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_4.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris_f(50, shadow_src_4);
+	Mat shadow_src_5 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_5.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris_f(50, shadow_src_5);
+	Mat shadow_src_6 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_6.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris_f(50, shadow_src_6);
+	Mat shadow_src_7 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_7.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris_f(50, shadow_src_7);
+	Mat shadow_src_8 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_8.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris_f(50, shadow_src_8);
+	Mat shadow_src_9 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_9.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris_f(50, shadow_src_9);
+	Mat shadow_src_10 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_10.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris_f(50, shadow_src_10);
+	Mat shadow_src_11 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_11.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris_f(50, shadow_src_11);
+	Mat shadow_src_12 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_12.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris_f(50, shadow_src_12);
+	Mat shadow_src_13 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_13.jpg");
+
+	imgOutlineAfterJudementOfOri.connerHarris_f(50, shadow_src_13);
+	Mat shadow_src_14 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_14.jpg");
+
+	imgOutlineAfterJudementOfOri.connerHarris_f(50, shadow_src_14);*/
+	/*****************************************改进的阴影进行角点检测****************************************/
+	Mat shadow_src_1 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_11.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src_1);
+	/*Mat shadow_src_2 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_2.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src_2);
+	Mat shadow_src_3 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_3.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src_3);
+	Mat shadow_src_4 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_4.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src_4);
+	Mat shadow_src_5 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_5.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src_5);
+	Mat shadow_src_6 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_6.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src_6);
+	Mat shadow_src_7 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_7.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src_7);
+	Mat shadow_src_8 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_8.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src_8);
+	Mat shadow_src_9 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_9.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src_9);
+	Mat shadow_src_10 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_10.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src_10);
+	Mat shadow_src_11 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_11.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src_11);
+	Mat shadow_src_12= imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_12.jpg");
+	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src_12);
+	Mat shadow_src_13 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_13.jpg");
+
+	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src_13);
+	Mat shadow_src_14 = imread("C:\\Users\\Administrator\\Desktop\\RespicS\\real_shadow_length\\test_14.jpg");
+	
+	imgOutlineAfterJudementOfOri.connerHarris(50, shadow_src_14);*/
+	
 }
