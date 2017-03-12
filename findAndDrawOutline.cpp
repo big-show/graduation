@@ -85,58 +85,111 @@ double* findAndDrawOutline::computeLenghtWidthRatio(double area, double perimete
 }
 //进行面积或长宽比例判断后将轮廓排除后的结果
 //image 是二值图像，outline是存储轮廓。
-Mat findAndDrawOutline::drawOutlineAfterJudement(Mat image, vector<vector<Point>> contours, int maxratio,int minratio)
+Mat findAndDrawOutline::drawOutlineAfterJudement(Mat image, vector<vector<Point>> contours, int maxratio, int minratio)
 {
 	double sum = 0.0;
 	int number = 0;
+	double sumLenght = 0.0;
 	for (int i = 0; i < contours.size(); i++)
 	{
-		sum += contourArea(contours[i]);
-		number++;
+		if (contourArea(contours[i])!=0)
+		{
+			sum += contourArea(contours[i]);
+
+			number++;
+		}
 	}
-	double mean = sum / (double)number;
-	std::cout <<"平均面积"<< mean << std::endl;
+	for (int i = 0; i < contours.size(); i++)
+	{
+		sumLenght += computeLength(contours[i]);
+	}
+	double mean = sum / number;
+	double mean_length = sumLenght / number;
+	std::cout << "平均面积" << mean << std::endl;
+	std::cout << "平均周长" << mean_length << std::endl;
+
 	Mat img_after_judement(image.size(), CV_8UC3, Scalar(0));
 	findContours(image, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+	double sum_ratio = 0.0;
 	for (int i = 0; i < contours.size(); i++)
 	{
 		double temparea = contourArea(contours[i]);
 		double tempPerimeter = computeLength(contours[i]);
-		double tempLenWidthRatio = computeLenghtWidthRatio(temparea, tempPerimeter)[2];
-		if (temparea >= mean/4&&tempLenWidthRatio<30)
+		if (temparea != 0)
 		{
-			for (int j = 0; j < contours[i].size(); j++)
+			double tempLenWidthRatio = computeLenghtWidthRatio(temparea, tempPerimeter)[2];
+			sum_ratio += tempLenWidthRatio;
+		}
+
+	}
+	double mean_ratio = sum_ratio / number;
+	std::cout << "平均长宽比" << mean_ratio << std::endl;
+
+		for (int i = 0; i < contours.size(); i++)
+		{
+			double temparea = contourArea(contours[i]);
+			double tempPerimeter = computeLength(contours[i]);
+			double tempLenWidthRatio = computeLenghtWidthRatio(temparea, tempPerimeter)[2];
+			if (temparea >= mean / 4 && tempLenWidthRatio < 20)
 			{
-				img_after_judement.at<Vec3b>(contours[i][j])[0] = 191;
-				img_after_judement.at<Vec3b>(contours[i][j])[1] = 19;
-				img_after_judement.at<Vec3b>(contours[i][j])[2] = 206;
+				for (int j = 0; j < contours[i].size(); j++)
+				{
+					img_after_judement.at<Vec3b>(contours[i][j])[0] = 191;
+					img_after_judement.at<Vec3b>(contours[i][j])[1] = 19;
+					img_after_judement.at<Vec3b>(contours[i][j])[2] = 206;
+				}
 			}
 		}
-	}
-	return img_after_judement;
+		return img_after_judement;
 
-}
+	}
+
 //进行用面积排除，以及对长宽率处理后在原图画出图像
 Mat findAndDrawOutline::drawOutlineAfterJudementOfOri(Mat image, vector<vector<Point>> contours, int maxratio, int minratio)
 {
 	double sum = 0.0;
 	int number = 0;
+	double sumLenght = 0.0;
 	for (int i = 0; i < contours.size(); i++)
 	{
-		sum += contourArea(contours[i]);
-		number++;
+		if (contourArea(contours[i])!=0)
+		{
+			sum += contourArea(contours[i]);
+
+			number++;
+		}
 	}
-	double mean = sum / (double)number;
+	for (int i = 0; i < contours.size(); i++)
+	{
+		sumLenght += computeLength(contours[i]);
+
+	}
+	double mean = sum / number;
+	double mean_length = sumLenght / number;
 	std::cout << "平均面积" << mean << std::endl;
+	std::cout << "平均周长" << mean_length << std::endl;
 	//Mat img_after_judement(image.size(), CV_8UC3, Scalar(0));
 	//findContours(image, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+	double sum_ratio = 0.0;
+	for (int i = 0; i < contours.size(); i++)
+	{
+		double temparea = contourArea(contours[i]);
+		double tempPerimeter = computeLength(contours[i]);
+		if (temparea != 0)
+		{
+			double tempLenWidthRatio = computeLenghtWidthRatio(temparea, tempPerimeter)[2];
+			sum_ratio += tempLenWidthRatio;
+		}
 
+	}
+	double mean_ratio = sum_ratio / number;
+	std::cout << "平均长宽比" << mean_ratio << std::endl;
 	for (int i = 0; i < contours.size(); i++)
 	{
 		double temparea = contourArea(contours[i]);
 		double tempPerimeter = computeLength(contours[i]);
 		double tempLenWidthRatio = computeLenghtWidthRatio(temparea, tempPerimeter)[2];
-		if (temparea >= mean / minratio  && tempLenWidthRatio<30)
+		if (temparea >= mean / minratio&&tempLenWidthRatio<20)
 		{
 			for (int j = 0; j < contours[i].size(); j++)
 			{
@@ -195,18 +248,36 @@ Mat findAndDrawOutline::drawLogo(Mat image, Mat outline_img, bool flag ,int maxr
 		int number = 0;
 		for (int i = 0; i < contours.size(); i++)
 		{
-			sum += contourArea(contours[i]);
-			number++;
+			if (contourArea(contours[i])!=0)
+			{
+				sum += contourArea(contours[i]);
+
+				number++;
+			}
 		}
 
 		double mean = sum / (double)number;
 		int index = 1;
+		double sum_ratio = 0.0;
+		for (int i = 0; i < contours.size(); i++)
+		{
+			double temparea = contourArea(contours[i]);
+			double tempPerimeter = computeLength(contours[i]);
+			if (temparea != 0)
+			{
+				double tempLenWidthRatio = computeLenghtWidthRatio(temparea, tempPerimeter)[2];
+				sum_ratio += tempLenWidthRatio;
+			}
+
+		}
+		double mean_ratio = sum_ratio / number;
+		std::cout << "平均长宽比" << mean_ratio << std::endl;
 		for (int i = 0; i < contours.size();i++)
 		{
 			double temparea = contourArea(contours[i]);
 			double tempPerimeter = computeLength(contours[i]);
 			double tempLenWidthRatio = computeLenghtWidthRatio(temparea, tempPerimeter)[2];
-			if (temparea >= mean / minratio  && tempLenWidthRatio<=30)
+			if (temparea >= mean / minratio  && tempLenWidthRatio<=20)
 			{
 				std::stringstream sstr;
 				sstr << index;
@@ -218,9 +289,9 @@ Mat findAndDrawOutline::drawLogo(Mat image, Mat outline_img, bool flag ,int maxr
 				double *result = new double[3];
 				result = computeLenghtWidthRatio(area, preimeter);
 				if (result[0]>result[1])
-					std::cout << "第" << index << "个轮廓的面积为    " << area + preimeter << "       " << preimeter << "   " << result[0] << "    " << result[1] << "    " << result[2] << std::endl;
+					std::cout << "第" << index << "个轮廓的面积为    " << area*0.61 + preimeter*0.61 << "       " << preimeter << "   " << result[0] << "    " << result[1] * 0.61*1.2975 << "    " << result[2] << std::endl;
 				else
-					std::cout << "第" << index << "个轮廓的面积为    " << area + preimeter << "       " << preimeter << "   " << result[1] << "    " << result[0] << "    " << result[2] << std::endl;
+					std::cout << "第" << index << "个轮廓的面积为    " << area*0.61 + preimeter*0.61 << "       " << preimeter << "   " << result[1] << "    " << result[0] * 0.61*1.2975 << "    " << result[2] << std::endl;
 				index++;
 
 			}
@@ -245,12 +316,26 @@ vector<Point> findAndDrawOutline::getGrowPoint(Mat image, int maxratio, int minr
 
 	double mean = sum / (double)number;
 	int index = 1;
+	double sum_ratio = 0.0;
+	for (int i = 0; i < contours.size(); i++)
+	{
+		double temparea = contourArea(contours[i]);
+		double tempPerimeter = computeLength(contours[i]);
+		if (temparea != 0)
+		{
+			double tempLenWidthRatio = computeLenghtWidthRatio(temparea, tempPerimeter)[2];
+			sum_ratio += tempLenWidthRatio;
+		}
+
+	}
+	double mean_ratio = sum_ratio / number;
+	std::cout << "平均长宽比" << mean_ratio << std::endl;
 	for (int i = 0; i < contours.size(); i++)
 	{
 		double temparea = contourArea(contours[i]);
 		double tempPerimeter = computeLength(contours[i]);
 		double tempLenWidthRatio = computeLenghtWidthRatio(temparea, tempPerimeter)[2];
-		if (temparea >= mean / minratio  && tempLenWidthRatio <= 30)
+		if (temparea >= mean / minratio  && tempLenWidthRatio <= 20)
 		{
 			growPoint.push_back(contours[i][1]);
 			std::cout << "第" << index << "个种子点的坐标" << contours[i][1].x << "," << contours[i][1].y << std::endl;

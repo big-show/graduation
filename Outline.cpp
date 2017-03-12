@@ -145,9 +145,9 @@ void outline::opreationAboutOutline(IplImage *src,bool shadow_flag)
 	/***************************************先对图像进行轮廓填充再对图像进行腐蚀膨胀开闭操作操作************************************/
 
 	Mat erodeAfterfillhole;
-	cv::erode(img_fillhold, erodeAfterfillhole, Mat());
+	/*cv::erode(img_fillhold, erodeAfterfillhole, Mat());
 	namedWindow("Eroded Image After fillhole");
-	imshow("Eroded Image After fillhole", erodeAfterfillhole);
+	imshow("Eroded Image After fillhole", erodeAfterfillhole);*/
 	Mat openedAfterfillhole;
 	//结构元素尺寸
 	morphologyEx(img_fillhold, openedAfterfillhole, MORPH_OPEN, element5);
@@ -209,6 +209,7 @@ void outline::opreationAboutOutline(IplImage *src,bool shadow_flag)
 	/**************************************运用面积以及长宽比例排除部分轮廓后的二值轮廓图像**************************/
 	findAndDrawOutline imgOutlineAfterJudement;
 	Mat img_outline_after_judement(img_binary_mat.size(), CV_8UC3, Scalar(0));
+	cout << "image outline after Judement" << endl;
 	img_outline_after_judement = imgOutlineAfterJudement.drawOutlineAfterJudement(openedAfterfillhole, contours, 10, 4);
 	namedWindow("binary_img Outline After Judgement");
 	imshow("binary_img Outline After Judgement", img_outline_after_judement);
@@ -242,7 +243,10 @@ void outline::opreationAboutOutline(IplImage *src,bool shadow_flag)
 			}
 		}
 	}
+	namedWindow("binary_img Outline After Judgement11");
+	imshow("binary_img Outline After Judgement11", binary_img_fillhold);
 	Mat result_im;
+	cout << "image outline after Judement" << endl;
 	result_im = imgOutlineAfterJudement.drawOutlineAfterJudementOfOri(binary_img_fillhold, contours, 10, 4);
 	result_im = src_outline.drawLogo(openedAfterfillhole, result_im, true, 10, 4);
 	namedWindow("Fillhole Image After Judement of Binary");
